@@ -9,10 +9,11 @@ import {
   showToast,
   useNavigation,
 } from "@raycast/api";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { PreferencesErrorView } from "./components/preferences-error";
 import { viewSecretFlow } from "./lib/crypto-flows";
-import { ApiError, ValidationError } from "./lib/errors";
-import { getPrefs } from "./lib/preferences";
+import { toMessage } from "./lib/errors";
+import { loadPrefs } from "./lib/preferences";
 
 interface FormValues {
   url: string;
@@ -20,9 +21,14 @@ interface FormValues {
 }
 
 export default function ViewSecretCommand() {
-  const prefs = getPrefs();
+  const prefsResult = useMemo(() => loadPrefs(), []);
   const { push } = useNavigation();
   const [loading, setLoading] = useState(false);
+
+  if (!prefsResult.ok) {
+    return <PreferencesErrorView message={prefsResult.error} />;
+  }
+  const prefs = prefsResult.prefs;
 
   async function handleSubmit(values: FormValues) {
     if (prefs.confirmConsume) {
@@ -49,16 +55,10 @@ export default function ViewSecretCommand() {
         />,
       );
     } catch (err) {
-      const msg =
-        err instanceof ApiError || err instanceof ValidationError
-          ? err.message
-          : err instanceof Error
-            ? err.message
-            : String(err);
       await showToast({
         style: Toast.Style.Failure,
         title: "Couldn't reveal secret",
-        message: msg,
+        message: toMessage(err),
       });
     } finally {
       setLoading(false);
