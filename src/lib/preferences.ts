@@ -1,4 +1,5 @@
 import { getPreferenceValues } from "@raycast/api";
+import { toMessage } from "./errors";
 import { validateHost } from "./validation";
 import {
   type Expiry,
@@ -43,6 +44,18 @@ export function getPrefs(): Preferences {
     openInBrowser: raw.openInBrowser ?? false,
     confirmConsume: raw.confirmConsume ?? true,
   };
+}
+
+export type PrefsResult =
+  | { ok: true; prefs: Preferences }
+  | { ok: false; error: string };
+
+export function loadPrefs(): PrefsResult {
+  try {
+    return { ok: true, prefs: getPrefs() };
+  } catch (err) {
+    return { ok: false, error: toMessage(err) };
+  }
 }
 
 function parseViews(value: string | undefined): MaxViews {

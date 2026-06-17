@@ -1,6 +1,6 @@
 import { Clipboard, showHUD } from "@raycast/api";
 import { createSecretFlow } from "./lib/crypto-flows";
-import { ApiError, ValidationError } from "./lib/errors";
+import { toMessage } from "./lib/errors";
 import { getPrefs } from "./lib/preferences";
 
 export default async function CreateFromClipboard() {
@@ -26,12 +26,6 @@ export default async function CreateFromClipboard() {
       `✓ Secret created — link copied (${viewsLabel} · ${prefs.defaultExpiry})`,
     );
   } catch (err) {
-    const msg =
-      err instanceof ApiError || err instanceof ValidationError
-        ? err.message
-        : err instanceof Error
-          ? err.message
-          : String(err);
-    await showHUD(`✗ ${msg}`);
+    await showHUD(`✗ ${toMessage(err)}`);
   }
 }
