@@ -74,15 +74,6 @@
       ]
     },
     {
-      "name": "autoCopy",
-      "title": "Auto-copy link",
-      "label": "Copy the new secret link to the clipboard automatically",
-      "description": "When checked, the share link is copied as soon as it's created.",
-      "type": "checkbox",
-      "required": false,
-      "default": true
-    },
-    {
       "name": "openInBrowser",
       "title": "Open in browser",
       "label": "Open the secret link in the browser after creating it",
