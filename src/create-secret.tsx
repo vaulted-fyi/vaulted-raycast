@@ -46,6 +46,8 @@ function viewsLabel(v: MaxViews): string {
 export default function CreateSecretCommand() {
   const prefsResult = useMemo(() => loadPrefs(), []);
   const [loading, setLoading] = useState(false);
+  const [secret, setSecret] = useState("");
+  const [passphrase, setPassphrase] = useState("");
   const submitting = useRef(false);
 
   if (!prefsResult.ok) {
@@ -74,6 +76,8 @@ export default function CreateSecretCommand() {
       await showHUD(
         `✓ Secret created — link copied (${viewsLabel(views)} · ${EXPIRY_LABELS[expiry]})`,
       );
+      setSecret("");
+      setPassphrase("");
       await popToRoot();
     } catch (err) {
       await showToast({
@@ -102,6 +106,8 @@ export default function CreateSecretCommand() {
       <Form.TextArea
         id="secret"
         title="Secret"
+        value={secret}
+        onChange={setSecret}
         placeholder={`Paste up to ${MAX_SECRET_LENGTH} characters`}
         info="Encrypted on your machine. The server never sees plaintext."
       />
@@ -130,6 +136,8 @@ export default function CreateSecretCommand() {
       <Form.PasswordField
         id="passphrase"
         title="Passphrase (optional)"
+        value={passphrase}
+        onChange={setPassphrase}
         placeholder="Adds a second factor; recipient must enter it to decrypt"
       />
     </Form>
