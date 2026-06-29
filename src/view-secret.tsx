@@ -9,7 +9,7 @@ import {
   showToast,
   useNavigation,
 } from "@raycast/api";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { PreferencesErrorView } from "./components/preferences-error";
 import { viewSecretFlow } from "./lib/crypto-flows";
 import { toMessage } from "./lib/errors";
@@ -24,6 +24,7 @@ export default function ViewSecretCommand() {
   const prefsResult = useMemo(() => loadPrefs(), []);
   const { push } = useNavigation();
   const [loading, setLoading] = useState(false);
+  const submitting = useRef(false);
 
   if (!prefsResult.ok) {
     return <PreferencesErrorView message={prefsResult.error} />;
@@ -31,19 +32,21 @@ export default function ViewSecretCommand() {
   const prefs = prefsResult.prefs;
 
   async function handleSubmit(values: FormValues) {
-    if (prefs.confirmConsume) {
-      const ok = await confirmAlert({
-        title: "Reveal this secret?",
-        message:
-          "Viewing consumes one view. The secret may be destroyed afterwards.",
-        primaryAction: { title: "Reveal", style: Alert.ActionStyle.Default },
-        dismissAction: { title: "Cancel", style: Alert.ActionStyle.Cancel },
-      });
-      if (!ok) return;
-    }
-
-    setLoading(true);
+    if (submitting.current) return;
+    submitting.current = true;
     try {
+      if (prefs.confirmConsume) {
+        const ok = await confirmAlert({
+          title: "Reveal this secret?",
+          message:
+            "Viewing consumes one view. The secret may be destroyed afterwards.",
+          primaryAction: { title: "Reveal", style: Alert.ActionStyle.Default },
+          dismissAction: { title: "Cancel", style: Alert.ActionStyle.Cancel },
+        });
+        if (!ok) return;
+      }
+
+      setLoading(true);
       const result = await viewSecretFlow({
         url: values.url.trim(),
         passphrase: values.passphrase || undefined,
@@ -62,6 +65,7 @@ export default function ViewSecretCommand() {
       });
     } finally {
       setLoading(false);
+      submitting.current = false;
     }
   }
 

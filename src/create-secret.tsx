@@ -2,15 +2,14 @@ import {
   Action,
   ActionPanel,
   Clipboard,
-  Detail,
   Form,
   Toast,
   open,
   popToRoot,
+  showHUD,
   showToast,
-  useNavigation,
 } from "@raycast/api";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { PreferencesErrorView } from "./components/preferences-error";
 import { createSecretFlow } from "./lib/crypto-flows";
 import { toMessage } from "./lib/errors";
@@ -46,8 +45,10 @@ function viewsLabel(v: MaxViews): string {
 
 export default function CreateSecretCommand() {
   const prefsResult = useMemo(() => loadPrefs(), []);
-  const { push } = useNavigation();
   const [loading, setLoading] = useState(false);
+  const [secret, setSecret] = useState("");
+  const [passphrase, setPassphrase] = useState("");
+  const submitting = useRef(false);
 
   if (!prefsResult.ok) {
     return <PreferencesErrorView message={prefsResult.error} />;
@@ -55,22 +56,29 @@ export default function CreateSecretCommand() {
   const prefs = prefsResult.prefs;
 
   async function handleSubmit(values: FormValues) {
+    if (submitting.current) return;
+    submitting.current = true;
     setLoading(true);
     try {
+      const views = Number(values.views) as MaxViews;
+      const expiry = values.expiry as Expiry;
       const result = await createSecretFlow({
         plaintext: values.secret,
         host: prefs.host,
-        views: Number(values.views) as MaxViews,
-        expiry: values.expiry as Expiry,
+        views,
+        expiry,
         passphrase: values.passphrase || undefined,
       });
-      if (prefs.autoCopy) {
-        await Clipboard.copy(result.url);
-      }
+      await Clipboard.copy(result.url);
       if (prefs.openInBrowser) {
         await open(result.url);
       }
-      push(<SecretCreatedView url={result.url} autoCopied={prefs.autoCopy} />);
+      await showHUD(
+        `✓ Secret created — link copied (${viewsLabel(views)} · ${EXPIRY_LABELS[expiry]})`,
+      );
+      setSecret("");
+      setPassphrase("");
+      await popToRoot();
     } catch (err) {
       await showToast({
         style: Toast.Style.Failure,
@@ -79,6 +87,7 @@ export default function CreateSecretCommand() {
       });
     } finally {
       setLoading(false);
+      submitting.current = false;
     }
   }
 
@@ -97,6 +106,8 @@ export default function CreateSecretCommand() {
       <Form.TextArea
         id="secret"
         title="Secret"
+        value={secret}
+        onChange={setSecret}
         placeholder={`Paste up to ${MAX_SECRET_LENGTH} characters`}
         info="Encrypted on your machine. The server never sees plaintext."
       />
@@ -125,45 +136,10 @@ export default function CreateSecretCommand() {
       <Form.PasswordField
         id="passphrase"
         title="Passphrase (optional)"
+        value={passphrase}
+        onChange={setPassphrase}
         placeholder="Adds a second factor; recipient must enter it to decrypt"
       />
     </Form>
-  );
-}
-
-function SecretCreatedView({
-  url,
-  autoCopied,
-}: {
-  url: string;
-  autoCopied: boolean;
-}) {
-  const markdown = [
-    "## Secret created",
-    "",
-    "Your encrypted link:",
-    "",
-    "```",
-    url,
-    "```",
-    "",
-    autoCopied ? "✓ Already copied to clipboard." : "",
-    "",
-    "⚠ Anyone with this link can view it. Send through a trusted channel.",
-  ]
-    .filter(Boolean)
-    .join("\n");
-
-  return (
-    <Detail
-      markdown={markdown}
-      actions={
-        <ActionPanel>
-          <Action.CopyToClipboard title="Copy Link" content={url} />
-          <Action.OpenInBrowser title="Open in Browser" url={url} />
-          <Action title="Create Another" onAction={() => popToRoot()} />
-        </ActionPanel>
-      }
-    />
   );
 }
