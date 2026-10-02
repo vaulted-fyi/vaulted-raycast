@@ -97,7 +97,7 @@
     "@vaulted/crypto": "^1.0.0"
   },
   "devDependencies": {
-    "@raycast/eslint-config": "^1.0.11",
+    "@raycast/eslint-config": "^2.0.0",
     "@types/node": "^22.10.0",
     "@types/react": "^19.0.0",
     "eslint": "^8.57.1",
