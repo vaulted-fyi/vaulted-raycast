@@ -5,7 +5,7 @@
 - Passphrase-protected links created on vaulted.fyi now open in View Secret, and passphrase links created in Raycast now open on vaulted.fyi. Updates `@vaulted/crypto` to 1.1.0, which derives the passphrase key with 600,000 PBKDF2 iterations.
 - Passphrase links created by earlier versions of the extension (100,000 iterations) still open.
 
-## [Initial Version] - {PR_MERGE_DATE}
+## [Initial Version] - 2026-07-07
 
 - Create Secret command — Form for textarea, max views, expiry, optional passphrase. Encrypts client-side, copies the share link to the clipboard.
 - Create Secret from Clipboard command — No-view hotkey path. Encrypts current clipboard contents with default settings.
